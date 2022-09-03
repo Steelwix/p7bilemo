@@ -6,6 +6,7 @@ use App\Repository\ClientsRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ClientsRepository::class)]
 class Clients
@@ -13,12 +14,15 @@ class Clients
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["getClients"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getClients"])]
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Users::class)]
+    #[Groups(["getClients"])]
     private Collection $users;
 
     public function __construct()
