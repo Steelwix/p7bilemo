@@ -21,7 +21,7 @@ class Clients
     #[Groups(["getClients"])]
     private ?string $name = null;
 
-    #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Users::class)]
+    #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Users::class,  cascade: ['persist', 'remove'])]
     #[Groups(["getClients"])]
     private Collection $users;
 

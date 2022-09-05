@@ -6,6 +6,7 @@ use App\Repository\UsersRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UsersRepository::class)]
 class Users implements UserInterface, PasswordAuthenticatedUserInterface
@@ -13,12 +14,15 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["getUsers"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(["getUsers"])]
     private ?string $username = null;
 
     #[ORM\Column]
+    #[Groups(["getUsers"])]
     private array $roles = [];
 
     /**
@@ -28,10 +32,11 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getUsers"])]
     private ?string $email = null;
 
-    #[ORM\ManyToOne(inversedBy: 'users')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Clients $Client = null;
 
     public function getId(): ?int
@@ -68,8 +73,9 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
-
+        if ($roles === null) {
+            $roles[] = 'ROLE_USER';
+        }
         return array_unique($roles);
     }
 

@@ -23,7 +23,7 @@ class ClientController extends AbstractController
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
         $clientList = $clientsRepository->findAllWithPagination($page, $limit);
-        $jsonClientList = $serializer->serialize($clientList, 'json');
+        $jsonClientList = $serializer->serialize($clientList, 'json', ['groups' => 'getClients']);
         return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
 
 
