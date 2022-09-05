@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasher;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -73,6 +74,24 @@ class UserController extends AbstractController
     {
         $jsonUser = $serializer->serialize($user, 'json', ['groups' => 'getUsers']);
         return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
+    }
+    #[Route('/api/users/{id}', name: 'app_one_book', methods: ['PUT'])]
+    public function updateBook(Users $currentUser, UserPasswordHasherInterface $userPasswordHasher, SerializerInterface $serializer, EntityManagerInterface $em, ClientsRepository $clientsRepository, Request $request)
+    {
+        $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
+
+        $content = $request->toArray();
+        if (isset($content['idClient'])) {
+            $idClient = $content['idClient'] ?? -1;
+            $updatedUser->setClient($clientsRepository->find($idClient));
+        }
+        if (isset($content['password'])) {
+            $unhashedPassword = $content['password'];
+            $updatedUser->setPassword($userPasswordHasher->hashPassword($updatedUser, $unhashedPassword));
+        }
+        $em->persist($updatedUser);
+        $em->flush();
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
     #[Route('/api/users/{id}', name: 'app_delete_user', methods: ['DELETE'])]
     public function deleteUser(Users $user, EntityManagerInterface $em): JsonResponse
