@@ -56,7 +56,7 @@ class ClientController extends AbstractController
     #[Route('/api/clients/{id}', name: 'app_one_client', methods: ['GET'])]
     public function getDetailClient(Clients $client, SerializerInterface $serializer)
     {
-        $jsonClient = $serializer->serialize($client, 'json');
+        $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
         return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
     }
     #[Route('/api/clients/{id}', name: 'app_update_client', methods: ['PUT'])]
@@ -78,5 +78,11 @@ class ClientController extends AbstractController
         $em->remove($client);
         $em->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+    #[Route('/api/clients/{id}/users', name: 'app_users_from_client', methods: ['GET'])]
+    public function getAllUsersFromClient(Clients $client, SerializerInterface $serializer)
+    {
+        $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClientUsers']);
+        return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
     }
 }

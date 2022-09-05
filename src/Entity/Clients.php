@@ -14,15 +14,15 @@ class Clients
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClients"])]
+    #[Groups(["getClients", "getUsers"])]
     private ?string $name = null;
 
     #[ORM\OneToMany(mappedBy: 'Client', targetEntity: Users::class,  cascade: ['persist', 'remove'])]
-    #[Groups(["getClients"])]
+    #[Groups(["getClientUsers"])]
     private Collection $users;
 
     public function __construct()
