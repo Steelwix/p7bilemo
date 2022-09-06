@@ -67,6 +67,7 @@ class PhoneController extends AbstractController
         return new JsonResponse($jsonPhone, Response::HTTP_OK, [], true);
     }
     #[Route('/api/phones/{id}', name: 'app_update_phone', methods: ['PUT'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function updatePhone(
         Request $request,
         SerializerInterface $serializer,
@@ -80,6 +81,7 @@ class PhoneController extends AbstractController
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
     #[Route('/api/phones/{id}', name: 'app_delete_phone', methods: ['DELETE'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deletePhone(Phones $phone, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($phone);

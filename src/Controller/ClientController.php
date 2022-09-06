@@ -18,29 +18,37 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 class ClientController extends AbstractController
 {
     #[Route('/api/clients', name: 'app_clients', methods: ['GET'])]
-    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllBooks(ClientsRepository $clientsRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 10);
-        $clientList = $clientsRepository->findAllWithPagination($page, $limit);
-        $jsonClientList = $serializer->serialize($clientList, 'json', ['groups' => 'getClients']);
-        return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
+        $user = $this->getUser();
+        $userRole = $user->getRoles();
+        if ($userRole !== "ROLE_SUPER_ADMIN") {
+            $userClient = $user->getClient();
+            $jsonClientList = $serializer->serialize($userClient, 'json', ['groups' => 'getClients']);
+            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
+        } else {
+            $page = $request->get('page', 1);
+            $limit = $request->get('limit', 10);
+            $clientList = $clientsRepository->findAllWithPagination($page, $limit);
+            $jsonClientList = $serializer->serialize($clientList, 'json', ['groups' => 'getClients']);
+            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
 
 
-        // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
+            // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
 
-        //$page = $request->get('page', 1);
-        //$limit = $request->get('limit', 10);
+            //$page = $request->get('page', 1);
+            //$limit = $request->get('limit', 10);
 
-        //$idCache = "getAllPhones-" . $page . "-" . $limit;
-        //$jsonPhonesList = $cachePool->get($idCache,S function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
-        //     $item->tag("getAllPhones");
-        //     $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
-        //     return $serializer->serialize($phonesList, 'json', ['groups' => 'getPhones']);
-        // });
+            //$idCache = "getAllPhones-" . $page . "-" . $limit;
+            //$jsonPhonesList = $cachePool->get($idCache,S function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
+            //     $item->tag("getAllPhones");
+            //     $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
+            //     return $serializer->serialize($phonesList, 'json', ['groups' => 'getPhones']);
+            // });
 
-        // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
+            // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
+        }
     }
     #[Route('/api/clients', name: 'app_create_client', methods: ['POST'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
@@ -56,11 +64,20 @@ class ClientController extends AbstractController
     }
 
     #[Route('/api/clients/{id}', name: 'app_one_client', methods: ['GET'])]
-    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getDetailClient(Clients $client, SerializerInterface $serializer)
     {
-        $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
-        return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
+        $user = $this->getUser();
+        $userRole = $user->getRoles();
+        $userClient = $user->getClient();
+
+        if ($userRole !== "ROLE_SUPER_ADMIN" || $userClient !== $client) {
+
+            $jsonClientList = $serializer->serialize($userClient, 'json', ['groups' => 'getClients']);
+            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
+        } else {
+            $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
+            return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
+        }
     }
     #[Route('/api/clients/{id}', name: 'app_update_client', methods: ['PUT'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
@@ -87,7 +104,17 @@ class ClientController extends AbstractController
     #[Route('/api/clients/{id}/users', name: 'app_users_from_client', methods: ['GET'])]
     public function getAllUsersFromClient(Clients $client, SerializerInterface $serializer)
     {
-        $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClientUsers']);
-        return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
+        $user = $this->getUser();
+        $userRole = $user->getRoles();
+        $userClient = $user->getClient();
+
+        if ($userRole !== "ROLE_SUPER_ADMIN" && $userClient !== $client) {
+
+            $jsonUserClient = $serializer->serialize($userClient, 'json', ['groups' => 'getClientsUsers']);
+            return new JsonResponse($jsonUserClient, Response::HTTP_OK, [], true);
+        } else {
+            $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClientUsers']);
+            return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
+        }
     }
 }
