@@ -26,6 +26,9 @@ security:
             pattern: ^/api
             stateless: true
             jwt: ~
+    role_hierarchy:
+        ROLE_ADMIN:       ROLE_USER
+        ROLE_SUPER_ADMIN: ROLE_ADMIN
         #main:
          #   lazy: true
           #  provider: app_user_provider

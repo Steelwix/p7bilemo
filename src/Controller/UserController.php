@@ -12,13 +12,16 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasher;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
+/**
+ * @method ?User getUser()
+ */
 class UserController extends AbstractController
 {
     #[Route('/api/users', name: 'app_users', methods: ['GET'])]
@@ -27,29 +30,26 @@ class UserController extends AbstractController
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
-        $userList = $usersRepository->findAllWithPagination($page, $limit);
-        $jsonUserList = $serializer->serialize($userList, 'json', ['groups' => 'getUsers']);
-        return new JsonResponse($jsonUserList, Response::HTTP_OK, [], true);
+        $idCache = "allUsersCache-" . $page . "-" . $limit;
+        $jsonUsersList = $cachePool->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer) {
+            $item->tag("allUsersCache");
+            $usersList = $usersRepository->findAllWithPagination($page, $limit);
+            return $serializer->serialize($usersList, 'json', ['groups' => 'getUsers']);
+        });
 
-
-        // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
-
-        //$page = $request->get('page', 1);
-        //$limit = $request->get('limit', 10);
-
-        //$idCache = "getAllPhones-" . $page . "-" . $limit;
-        //$jsonPhonesList = $cachePool->get($idCache,S function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
-        //     $item->tag("getAllPhones");
-        //     $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
-        //     return $serializer->serialize($phonesList, 'json', ['groups' => 'getPhones']);
-        // });
-
-        // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
+        return new JsonResponse($jsonUsersList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/users', name: 'app_create_user', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
-    public function createUser(ClientsRepository $clientsRepository, UserPasswordHasherInterface $userPasswordHasher, Request $request, SerializerInterface $serializer, EntityManagerInterface $em): JsonResponse
-    {
+    public function createUser(
+        ClientsRepository $clientsRepository,
+        UserPasswordHasherInterface $userPasswordHasher,
+        Request $request,
+        TagAwareCacheInterface $cache,
+        SerializerInterface $serializer,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $cache->invalidateTags(["allUsersCache"]);
         $newUser = $serializer->deserialize($request->getContent(), Users::class, 'json');
         $content = $request->toArray();
         $user = $this->getUser();
@@ -65,6 +65,10 @@ class UserController extends AbstractController
         } else {
             $client = $user->getClient();
             $newUser->setClient($client);
+            $newUserRole = $content['roles'];
+            if ($newUserRole === "ROLE_SUPER_ADMIN") {
+                $newUser->setRoles("ROLE_USER");
+            }
         }
 
 
@@ -96,14 +100,24 @@ class UserController extends AbstractController
     }
     #[Route('/api/users/{id}', name: 'app_one_book', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
-    public function updateUser(Users $currentUser, UserPasswordHasherInterface $userPasswordHasher, SerializerInterface $serializer, EntityManagerInterface $em, ClientsRepository $clientsRepository, Request $request)
-    {
+    public function updateUser(
+        Users $currentUser,
+        UserPasswordHasherInterface $userPasswordHasher,
+        SerializerInterface $serializer,
+        TagAwareCacheInterface $cache,
+        EntityManagerInterface $em,
+        ClientsRepository $clientsRepository,
+        Request $request
+    ) {
+        $cache->invalidateTags(["allUsersCache"]);
         $currentUserRole = $currentUser->getRoles();
         $currentUserClient = $currentUser->getClient();
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-
+        if ($currentUserRole === "ROLE_SUPER_ADMIN" && $userRole !== "ROLE_SUPER_ADMIN") {
+            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        }
         if ($userRole === "ROLE_SUPER_ADMIN" || $currentUserClient === $userClient) {
 
             $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
@@ -130,13 +144,20 @@ class UserController extends AbstractController
     }
     #[Route('/api/users/{id}', name: 'app_delete_user', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
-    public function deleteUser(Users $currentUser, EntityManagerInterface $em): JsonResponse
-    {
+    public function deleteUser(
+        Users $currentUser,
+        EntityManagerInterface $em,
+        TagAwareCacheInterface $cache
+    ): JsonResponse {
+        $cache->invalidateTags(["allUsersCache"]);
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
+        $currentUserRole = $currentUser->getRoles();
         $currentUserClient = $currentUser->getClient();
-
+        if ($currentUserRole === "ROLE_SUPER_ADMIN" && $userRole !== "ROLE_SUPER_ADMIN") {
+            return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        }
         if ($userRole === "ROLE_SUPER_ADMIN" || $currentUserClient === $userClient) {
             $em->remove($currentUser);
             $em->flush();
