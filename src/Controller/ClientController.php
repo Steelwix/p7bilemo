@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
@@ -18,6 +18,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 class ClientController extends AbstractController
 {
     #[Route('/api/clients', name: 'app_clients', methods: ['GET'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllBooks(ClientsRepository $clientsRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $page = $request->get('page', 1);
@@ -42,6 +43,7 @@ class ClientController extends AbstractController
         // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/clients', name: 'app_create_client', methods: ['POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createPhone(Request $request, SerializerInterface $serializer, EntityManagerInterface $em): JsonResponse
     {
         $client = $serializer->deserialize($request->getContent(), Clients::class, 'json');
@@ -54,12 +56,14 @@ class ClientController extends AbstractController
     }
 
     #[Route('/api/clients/{id}', name: 'app_one_client', methods: ['GET'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getDetailClient(Clients $client, SerializerInterface $serializer)
     {
         $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
         return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
     }
     #[Route('/api/clients/{id}', name: 'app_update_client', methods: ['PUT'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function UpdatePhone(
         Request $request,
         SerializerInterface $serializer,
@@ -73,6 +77,7 @@ class ClientController extends AbstractController
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
     #[Route('/api/clients/{id}', name: 'app_delete_client', methods: ['DELETE'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deletePhone(Clients $client, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($client);

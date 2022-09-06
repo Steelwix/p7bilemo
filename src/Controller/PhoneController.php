@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Phones;
 use App\Repository\PhonesRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,6 +44,7 @@ class PhoneController extends AbstractController
         // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/phones', name: 'app_create_phone', methods: ['POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createPhone(
         Request $request,
         SerializerInterface $serializer,

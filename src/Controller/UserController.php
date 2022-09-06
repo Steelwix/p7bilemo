@@ -7,6 +7,7 @@ use App\Entity\Users;
 use App\Repository\ClientsRepository;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,17 +46,18 @@ class UserController extends AbstractController
         // return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
     }
     #[Route('/api/users', name: 'app_create_user', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createUser(ClientsRepository $clientsRepository, UserPasswordHasherInterface $userPasswordHasher, Request $request, SerializerInterface $serializer, EntityManagerInterface $em): JsonResponse
     {
         $user = $serializer->deserialize($request->getContent(), Users::class, 'json');
 
         $content = $request->toArray();
 
-        // Récupération de l'idAuthor. S'il n'est pas défini, alors on met -1 par défaut.
+        // Récupération de l'idCLient. S'il n'est pas défini, alors on met -1 par défaut.
         $idClient = $content['idClient'] ?? -1;
 
-        // On cherche l'auteur qui correspond et on l'assigne au livre.
-        // Si "find" ne trouve pas l'auteur, alors null sera retourné.
+        // On cherche le client qui correspond et on l'assigne au user.
+        // Si "find" ne trouve pas le client, alors null sera retourné.
         $user->setClient($clientsRepository->find($idClient));
 
         $unhashedPassword = $content['password'];
@@ -76,6 +78,7 @@ class UserController extends AbstractController
         return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
     }
     #[Route('/api/users/{id}', name: 'app_one_book', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function updateBook(Users $currentUser, UserPasswordHasherInterface $userPasswordHasher, SerializerInterface $serializer, EntityManagerInterface $em, ClientsRepository $clientsRepository, Request $request)
     {
         $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
@@ -94,6 +97,7 @@ class UserController extends AbstractController
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
     #[Route('/api/users/{id}', name: 'app_delete_user', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deleteUser(Users $user, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($user);

@@ -14,7 +14,7 @@ class Clients
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getClients", "getUsers"])]
+    #[Groups(["getClients"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
