@@ -6,6 +6,7 @@ use App\Repository\PhonesRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use Hateoas\Configuration\Annotation as Hateoas;
 
 // ...
@@ -53,6 +54,8 @@ class Phones
 
     #[ORM\Column(length: 255)]
     #[Groups(["getPhones"])]
+    #[Assert\NotBlank(message: "Le nom du téléphone est obligatoire")]
+    #[Assert\Length(min: 1, max: 255, minMessage: "Le nom du téléphone ne peut pas être vide", maxMessage: "Le nom du téléphone ne peut pas faire plus de {{ limit }} caractères")]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
