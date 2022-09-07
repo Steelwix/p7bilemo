@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Phones;
 use App\Repository\PhonesRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -28,7 +29,8 @@ class PhoneController extends AbstractController
         $jsonPhonesList = $cachePool->get($idCache, function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
             $item->tag("allPhonesCache");
             $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
-            return $serializer->serialize($phonesList, 'json', ['groups' => 'getPhones']);
+            $context = SerializationContext::create()->setGroups(["getPhones"]);
+            return $serializer->serialize($phonesList, 'json', $context);
         });
 
         return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
@@ -46,8 +48,8 @@ class PhoneController extends AbstractController
         $phone = $serializer->deserialize($request->getContent(), Phones::class, 'json');
         $em->persist($phone);
         $em->flush();
-
-        $jsonPhone = $serializer->serialize($phone, 'json', ['groups' => 'getPhones']);
+        $context = SerializationContext::create()->setGroups(["getPhones"]);
+        $jsonPhone = $serializer->serialize($phone, 'json', $context);
         $location = $urlGenerator->generate('app_one_phone', ['id' => $phone->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         return new JsonResponse($jsonPhone, Response::HTTP_CREATED, ["Location" => $location], true);
     }
@@ -68,7 +70,10 @@ class PhoneController extends AbstractController
         TagAwareCacheInterface $cache
     ) {
         $cache->invalidateTags(["allPhonesCache"]);
-        $updatedPhone = $serializer->deserialize($request->getContent(), Phones::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentPhone]);
+        $updatedPhone = $serializer->deserialize($request->getContent(), Phones::class, 'json');
+        $currentPhone->setName($updatedPhone->getName());
+        $currentPhone->setPrice($updatedPhone->setPrice());
+        $currentPhone->setDescription($updatedPhone->setDescription());
         $em->persist($updatedPhone);
         $em->flush();
 

@@ -27,7 +27,8 @@
         "symfony/runtime": "6.1.*",
         "symfony/security-bundle": "6.1.*",
         "symfony/serializer": "6.1.*",
-        "symfony/yaml": "6.1.*"
+        "symfony/yaml": "6.1.*",
+        "willdurand/hateoas-bundle": "^2.4"
     },
     "config": {
         "allow-plugins": {

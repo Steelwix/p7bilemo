@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -37,7 +38,8 @@ class ClientController extends AbstractController
                 $item->tag("allClientsCache");
                 $user = $this->getUser();
                 $userClient = $user->getClient();
-                return $serializer->serialize($userClient, 'json', ['groups' => 'getClients']);
+                $context = SerializationContext::create()->setGroups(["getClients"]);
+                return $serializer->serialize($userClient, 'json', $context);
             });
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         } else {
@@ -47,7 +49,8 @@ class ClientController extends AbstractController
             $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($clientsRepository, $page, $limit, $serializer) {
                 $item->tag("allClientsCache");
                 $clientList = $clientsRepository->findAllWithPagination($page, $limit);
-                return $serializer->serialize($clientList, 'json', ['groups' => 'getClients']);
+                $context = SerializationContext::create()->setGroups(["getClients"]);
+                return $serializer->serialize($clientList, 'json', $context);
             });
 
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
@@ -65,8 +68,8 @@ class ClientController extends AbstractController
         $client = $serializer->deserialize($request->getContent(), Clients::class, 'json');
         $em->persist($client);
         $em->flush();
-
-        $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
+        $context = SerializationContext::create()->setGroups(["getClients"]);
+        $jsonClient = $serializer->serialize($client, 'json', $context);
 
         return new JsonResponse($jsonClient, Response::HTTP_CREATED, [], true);
     }
@@ -80,11 +83,12 @@ class ClientController extends AbstractController
         $userClient = $user->getClient();
 
         if ($userRole !== "ROLE_SUPER_ADMIN" || $userClient !== $client) {
-
-            $jsonClientList = $serializer->serialize($userClient, 'json', ['groups' => 'getClients']);
+            $context = SerializationContext::create()->setGroups(["getClients"]);
+            $jsonClientList = $serializer->serialize($userClient, 'json',  $context);
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         } else {
-            $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClients']);
+            $context = SerializationContext::create()->setGroups(["getClients"]);
+            $jsonClient = $serializer->serialize($client, 'json',  $context);
             return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
         }
     }
@@ -98,8 +102,9 @@ class ClientController extends AbstractController
         TagAwareCacheInterface $cache
     ) {
         $cache->invalidateTags(["allClientsCache"]);
-        $updatedClient = $serializer->deserialize($request->getContent(), Clients::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentClient]);
-        $em->persist($updatedClient);
+        $updatedClient = $serializer->deserialize($request->getContent(), Clients::class, 'json');
+        $currentClient->setName($updatedClient->setName());
+        $em->persist($currentClient);
         $em->flush();
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
@@ -124,11 +129,12 @@ class ClientController extends AbstractController
         $userClient = $user->getClient();
 
         if ($userRole !== "ROLE_SUPER_ADMIN" && $userClient !== $client) {
-
-            $jsonUserClient = $serializer->serialize($userClient, 'json', ['groups' => 'getClientsUsers']);
+            $context = SerializationContext::create()->setGroups(["getClients"]);
+            $jsonUserClient = $serializer->serialize($userClient, 'json', $context);
             return new JsonResponse($jsonUserClient, Response::HTTP_OK, [], true);
         } else {
-            $jsonClient = $serializer->serialize($client, 'json', ['groups' => 'getClientUsers']);
+            $context = SerializationContext::create()->setGroups(["getClients"]);
+            $jsonClient = $serializer->serialize($client, 'json', $context);
             return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
         }
     }

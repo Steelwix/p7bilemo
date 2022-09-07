@@ -7,6 +7,7 @@ use App\Entity\Users;
 use App\Repository\ClientsRepository;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
@@ -34,7 +35,8 @@ class UserController extends AbstractController
         $jsonUsersList = $cachePool->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer) {
             $item->tag("allUsersCache");
             $usersList = $usersRepository->findAllWithPagination($page, $limit);
-            return $serializer->serialize($usersList, 'json', ['groups' => 'getUsers']);
+            $context = SerializationContext::create()->setGroups(["getUsers"]);
+            return $serializer->serialize($usersList, 'json', $context);
         });
 
         return new JsonResponse($jsonUsersList, Response::HTTP_OK, [], true);
@@ -77,8 +79,8 @@ class UserController extends AbstractController
 
         $em->persist($newUser);
         $em->flush();
-
-        $jsonUser = $serializer->serialize($newUser, 'json', ['groups' => 'getUsers']);
+        $context = SerializationContext::create()->setGroups(["getUsers"]);
+        $jsonUser = $serializer->serialize($newUser, 'json', $context);
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
@@ -92,13 +94,13 @@ class UserController extends AbstractController
         $checkingUserClient = $checkingUser->getClient();
 
         if ($userRole === "ROLE_SUPER_ADMIN" || $checkingUserClient === $userClient) {
-
-            $jsonUser = $serializer->serialize($checkingUser, 'json', ['groups' => 'getUsers']);
+            $context = SerializationContext::create()->setGroups(["getUsers"]);
+            $jsonUser = $serializer->serialize($checkingUser, 'json', $context);
             return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
         }
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
-    #[Route('/api/users/{id}', name: 'app_one_book', methods: ['PUT'])]
+    #[Route('/api/users/{id}', name: 'app_update_user', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function updateUser(
         Users $currentUser,
@@ -120,7 +122,9 @@ class UserController extends AbstractController
         }
         if ($userRole === "ROLE_SUPER_ADMIN" || $currentUserClient === $userClient) {
 
-            $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
+            $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json');
+            $currentUser->setUsername($updatedUser->setUsername());
+            $currentUser->setEmail($updatedUser->setEmail());
 
             $content = $request->toArray();
             if (isset($content['password'])) {
