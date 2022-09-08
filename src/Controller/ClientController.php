@@ -24,21 +24,22 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 class ClientController extends AbstractController
 {
     #[Route('/api/clients', name: 'app_clients', methods: ['GET'])]
-    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllClients(ClientsRepository $clientsRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $user = $this->getUser();
         $userRole = $user->getRoles();
         if ($userRole !== array("ROLE_SUPER_ADMIN")) {
-            $page = $request->get('page', 1);
-            $limit = $request->get('limit', 10);
-            $idCache = "allClientsCache-" . $page . "-" . $limit;
-            $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($clientsRepository, $page, $limit, $serializer) {
+
+            $idCache = "allClientsCache-";
+            $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($clientsRepository, $serializer) {
                 $item->tag("allClientsCache");
                 $user = $this->getUser();
                 $userClient = $user->getClient();
+                $idClient = $userClient->getId();
+                $clientList = $clientsRepository->findOneById($idClient);
                 $context = SerializationContext::create()->setGroups(["getClients"]);
-                return $serializer->serialize($userClient, 'json', $context);
+                return $serializer->serialize($clientList, 'json', $context);
             });
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         } else {
@@ -124,18 +125,19 @@ class ClientController extends AbstractController
     #[Route('/api/clients/{id}/users', name: 'app_users_from_client', methods: ['GET'])]
     public function getAllUsersFromClient(Clients $client, JMSSerializer $serializer)
     {
+
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
 
-        if ($userRole !== array("ROLE_SUPER_ADMIN") && $userClient !== $client) {
-            $context = SerializationContext::create()->setGroups(["getClients"]);
-            $jsonUserClient = $serializer->serialize($userClient, 'json', $context);
-            return new JsonResponse($jsonUserClient, Response::HTTP_OK, [], true);
+        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
+            $context = SerializationContext::create()->setGroups(["getClientUsers"]);
+            $jsonClientList = $serializer->serialize($userClient, 'json',  $context);
+            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         } else {
-            $context = SerializationContext::create()->setGroups(["getClients"]);
-            $jsonClient = $serializer->serialize($client, 'json', $context);
-            return new JsonResponse($jsonClient, Response::HTTP_OK, [], true);
+            $context = SerializationContext::create()->setGroups(["getClientUsers"]);
+            $jsonClientList = $serializer->serialize($client, 'json',  $context);
+            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         }
     }
 }

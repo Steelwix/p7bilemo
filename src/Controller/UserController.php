@@ -131,7 +131,7 @@ class UserController extends AbstractController
                 $updatedUser->setPassword($userPasswordHasher->hashPassword($updatedUser, $unhashedPassword));
             }
             if ($userRole === array("ROLE_SUPER_ADMIN")) {
-                $idClient = $content['idClient'] ?? -1;
+                $idClient = $content['Client'] ?? -1;
 
                 $updatedUser->setClient($clientsRepository->find($idClient));
             } else {
