@@ -59,7 +59,7 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(["getClientUsers", "getUsers"])]
-    private array $roles = [];
+    private ?array $roles = ["ROLE_USER"];
 
     /**
      * @var string The hashed password

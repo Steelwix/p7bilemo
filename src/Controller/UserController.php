@@ -16,9 +16,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use JMS\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface as JMSSerializer;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+
 
 /**
  * @method ?User getUser()
@@ -27,7 +29,7 @@ class UserController extends AbstractController
 {
     #[Route('/api/users', name: 'app_users', methods: ['GET'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
-    public function getAllUsers(UsersRepository $usersRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
+    public function getAllUsers(UsersRepository $usersRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
@@ -48,52 +50,51 @@ class UserController extends AbstractController
         UserPasswordHasherInterface $userPasswordHasher,
         Request $request,
         TagAwareCacheInterface $cache,
-        SerializerInterface $serializer,
+        JMSSerializer $jmsserializer,
+        SerializerInterface $serializerInterface,
         EntityManagerInterface $em
     ): JsonResponse {
         $cache->invalidateTags(["allUsersCache"]);
-        $newUser = $serializer->deserialize($request->getContent(), Users::class, 'json');
         $content = $request->toArray();
         $user = $this->getUser();
         $userRole = $user->getRoles();
+        $newUser = $serializerInterface->deserialize($request->getContent(), Users::class, 'json');
 
-        if ($userRole === "ROLE_SUPER_ADMIN") {
+
+        if ($userRole === array("ROLE_SUPER_ADMIN")) {
             // Récupération de l'idCLient. S'il n'est pas défini, alors on met -1 par défaut.
-            $idClient = $content['idClient'] ?? -1;
-
+            $idClient = $content['Client'] ?? -1;
             // On cherche le client qui correspond et on l'assigne au user.
             // Si "find" ne trouve pas le client, alors null sera retourné.
-            $newUser->setClient($clientsRepository->find($idClient));
+
+            $newUser->setClient($clientsRepository->findOneById($idClient));
         } else {
             $client = $user->getClient();
             $newUser->setClient($client);
-            $newUserRole = $content['roles'];
-            if ($newUserRole === "ROLE_SUPER_ADMIN") {
-                $newUser->setRoles("ROLE_USER");
+            if ($content['roles'] === array("ROLE_SUPER_ADMIN")) {
+                $content['roles'] = null;
             }
         }
 
-
         $unhashedPassword = $content['password'];
         $newUser->setPassword($userPasswordHasher->hashPassword($newUser, $unhashedPassword));
-
         $em->persist($newUser);
         $em->flush();
         $context = SerializationContext::create()->setGroups(["getUsers"]);
-        $jsonUser = $serializer->serialize($newUser, 'json', $context);
+        $jsonUser = $jmsserializer->serialize($newUser, 'json', $context);
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
 
     #[Route('/api/users/{id}', name: 'app_one_user', methods: ['GET'])]
-    public function getDetailUser(Users $checkingUser, SerializerInterface $serializer)
+    public function getDetailUser(Users $checkingUser, JMSSerializer $serializer)
     {
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
         $checkingUserClient = $checkingUser->getClient();
 
-        if ($userRole === "ROLE_SUPER_ADMIN" || $checkingUserClient === $userClient) {
+        if ($userRole === array("ROLE_SUPER_ADMIN") || $checkingUserClient === $userClient) {
             $context = SerializationContext::create()->setGroups(["getUsers"]);
             $jsonUser = $serializer->serialize($checkingUser, 'json', $context);
             return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
@@ -117,21 +118,19 @@ class UserController extends AbstractController
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-        if ($currentUserRole === "ROLE_SUPER_ADMIN" && $userRole !== "ROLE_SUPER_ADMIN") {
+        if ($currentUserRole === array("ROLE_SUPER_ADMIN") && $userRole !== array("ROLE_SUPER_ADMIN")) {
             return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
         }
-        if ($userRole === "ROLE_SUPER_ADMIN" || $currentUserClient === $userClient) {
+        if ($userRole === array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
 
-            $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json');
-            $currentUser->setUsername($updatedUser->setUsername());
-            $currentUser->setEmail($updatedUser->setEmail());
+            $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
 
             $content = $request->toArray();
             if (isset($content['password'])) {
                 $unhashedPassword = $content['password'];
                 $updatedUser->setPassword($userPasswordHasher->hashPassword($updatedUser, $unhashedPassword));
             }
-            if ($userRole === "ROLE_SUPER_ADMIN") {
+            if ($userRole === array("ROLE_SUPER_ADMIN")) {
                 $idClient = $content['idClient'] ?? -1;
 
                 $updatedUser->setClient($clientsRepository->find($idClient));
@@ -159,10 +158,10 @@ class UserController extends AbstractController
         $userClient = $user->getClient();
         $currentUserRole = $currentUser->getRoles();
         $currentUserClient = $currentUser->getClient();
-        if ($currentUserRole === "ROLE_SUPER_ADMIN" && $userRole !== "ROLE_SUPER_ADMIN") {
+        if ($currentUserRole === array("ROLE_SUPER_ADMIN") && $userRole !== array("ROLE_SUPER_ADMIN")) {
             return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
         }
-        if ($userRole === "ROLE_SUPER_ADMIN" || $currentUserClient === $userClient) {
+        if ($userRole === array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
             $em->remove($currentUser);
             $em->flush();
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
