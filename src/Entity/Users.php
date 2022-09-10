@@ -54,26 +54,27 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(["getClientUsers", "getUsers"])]
+    #[Groups(["getClientUsers", "getUsers", "createUser"])]
     private ?string $username = null;
 
     #[ORM\Column]
-    #[Groups(["getClientUsers", "getUsers"])]
+    #[Groups(["getClientUsers", "getUsers", "createUser"])]
     private ?array $roles = ["ROLE_USER"];
 
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Groups(["createUser"])]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getClientUsers", "getUsers"])]
+    #[Groups(["getClientUsers", "getUsers", "createUser"])]
     private ?string $email = null;
 
     #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers", "createUser"])]
     private ?Clients $Client = null;
 
     public function getId(): ?int

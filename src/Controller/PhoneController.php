@@ -19,16 +19,35 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 
 class PhoneController extends AbstractController
 {
+    /**
+     * Use this method to get all phones.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Use this method to get all phones.",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Phones")
+     *
+     */
     #[Route('/api/phones', name: 'app_phones', methods: ['GET'])]
-    public function getAllBooks(PhonesRepository $phonesRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
+    public function getAllPhones(PhonesRepository $phonesRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
         $idCache = "allPhonesCache-" . $page . "-" . $limit;
         $jsonPhonesList = $cachePool->get($idCache, function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
+            echo ("CACHE");
             $item->tag("allPhonesCache");
             $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
             $context = SerializationContext::create()->setGroups(["getPhones"]);
@@ -37,6 +56,22 @@ class PhoneController extends AbstractController
 
         return new JsonResponse($jsonPhonesList, Response::HTTP_OK, [], true);
     }
+
+    /**
+     * Use this method create a phone.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="You must be SUPER ADMIN to use this method.",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Phones")
+     *
+     */
     #[Route('/api/phones', name: 'app_create_phone', methods: ['POST'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createPhone(
@@ -62,13 +97,42 @@ class PhoneController extends AbstractController
         $location = $urlGenerator->generate('app_one_phone', ['id' => $phone->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         return new JsonResponse($jsonPhone, Response::HTTP_CREATED, ["Location" => $location], true);
     }
-
+    /**
+     * Use this method to get details about one phone.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" Use this method to get details about one phone.",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Phones")
+     *
+     */
     #[Route('/api/phones/{id}', name: 'app_one_phone', methods: ['GET'])]
-    public function getDetailPhone(Phones $phone, SerializerInterface $serializer)
+    public function getDetailPhone(Phones $phone, JMSSerializer $serializer)
     {
         $jsonPhone = $serializer->serialize($phone, 'json');
         return new JsonResponse($jsonPhone, Response::HTTP_OK, [], true);
     }
+    /**
+     * Use this method to modify the infos about one phone.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" You must be SUPER ADMIN to use this method.",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Phones")
+     *
+     */
     #[Route('/api/phones/{id}', name: 'app_update_phone', methods: ['PUT'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function updatePhone(
@@ -85,6 +149,21 @@ class PhoneController extends AbstractController
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
+    /**
+     * Use this method to delete one phone.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" You must be SUPER ADMIN to use this method.",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Phones")
+     *
+     */
     #[Route('/api/phones/{id}', name: 'app_delete_phone', methods: ['DELETE'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deletePhone(

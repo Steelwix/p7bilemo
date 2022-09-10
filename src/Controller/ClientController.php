@@ -17,14 +17,32 @@ use JMS\Serializer\SerializerInterface as JMSSerializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 
 /**
  * @method ?User getUser()
  */
 class ClientController extends AbstractController
 {
+    /**
+     * Use this method to get the client list.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" This method gives you info about your client entity. For SUPER ADMIN, it returns all clients",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients', name: 'app_clients', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllClients(ClientsRepository $clientsRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $user = $this->getUser();
@@ -56,6 +74,22 @@ class ClientController extends AbstractController
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         }
     }
+    /**
+     * Use this method to create a client.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" You must be SUPER ADMIN to use this method",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients', name: 'app_create_client', methods: ['POST'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createPhone(
@@ -74,7 +108,22 @@ class ClientController extends AbstractController
 
         return new JsonResponse($jsonClient, Response::HTTP_CREATED, [], true);
     }
-
+    /**
+     * Use this method to get the detail about one client.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" This method gives you info about your client entity. For SUPER ADMIN, it returns the concerned client",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients/{id}', name: 'app_one_client', methods: ['GET'])]
     public function getDetailClient(Clients $client, JMSSerializer $serializer)
     {
@@ -93,6 +142,22 @@ class ClientController extends AbstractController
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         }
     }
+    /**
+     * Use this method to modify the infos about one client.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" You must be SUPER ADMIN to use this method",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients/{id}', name: 'app_update_client', methods: ['PUT'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function UpdatePhone(
@@ -110,6 +175,22 @@ class ClientController extends AbstractController
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
+    /**
+     * Use this method to delete one client.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" You must be SUPER ADMIN to use this method",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients/{id}', name: 'app_delete_client', methods: ['DELETE'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deletePhone(
@@ -122,6 +203,22 @@ class ClientController extends AbstractController
         $em->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
+    /**
+     * Use this method to get all users from one client.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description=" This method will returns you all users from your client entity. For SUPER ADMIN, it returns the user list from the concerned client",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClientUsers"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Clients")
+     *
+     */
     #[Route('/api/clients/{id}/users', name: 'app_users_from_client', methods: ['GET'])]
     public function getAllUsersFromClient(Clients $client, JMSSerializer $serializer)
     {
@@ -129,7 +226,7 @@ class ClientController extends AbstractController
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-
+        //pagination
         if ($userRole !== array("ROLE_SUPER_ADMIN")) {
             $context = SerializationContext::create()->setGroups(["getClientUsers"]);
             $jsonClientList = $serializer->serialize($userClient, 'json',  $context);

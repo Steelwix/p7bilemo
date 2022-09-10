@@ -20,13 +20,33 @@ use JMS\Serializer\SerializerInterface as JMSSerializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Annotations as OA;
 
 
-/**
- * @method ?User getUser()
- */
+
+/** @method ?Users getUser() */
 class UserController extends AbstractController
 {
+
+    /**
+     * 
+     * Use this method to get the user list.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="You must be SUPER ADMIN to use this method",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Users::class, groups={"getUsers"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Users")
+     * 
+     */
     #[Route('/api/users', name: 'app_users', methods: ['GET'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllUsers(UsersRepository $usersRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
@@ -43,6 +63,24 @@ class UserController extends AbstractController
 
         return new JsonResponse($jsonUsersList, Response::HTTP_OK, [], true);
     }
+    /**
+     * Use this method to create a user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Username will be used for login, as password. The password will be hashed. The client will be the same as yours.
+      For the roles, you can create a simple user with ''roles '': [''ROLE_USER''] or an admin with  ''roles '': [''ROLE_ADMIN'']. For SUPER ADMIN,
+      use the id client to define the new user client. you can also define a new super admin with  ''roles '': [''ROLE_SUPER_ADMIN''] ",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Users::class, groups={"createUser"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Users")
+     *
+     */
     #[Route('/api/users', name: 'app_create_user', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function createUser(
@@ -85,7 +123,23 @@ class UserController extends AbstractController
 
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
-
+    /**
+     * 
+     * Use this method to get details about one user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Use this method to get details about one user. If you are not SUPER_ADMIN, you can get infos about a user that is not assigned to the same client as yours",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Users::class, groups={"getUsers"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Users")
+     * 
+     */
     #[Route('/api/users/{id}', name: 'app_one_user', methods: ['GET'])]
     public function getDetailUser(Users $checkingUser, JMSSerializer $serializer)
     {
@@ -101,6 +155,26 @@ class UserController extends AbstractController
         }
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
+
+    /**
+     * 
+     * Use this method to modify a user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Username will be used for login, as password. The password will be hashed. The client will be the same as yours.
+      For the roles, you can create a simple user with ''roles '': [''ROLE_USER''] or an admin with  ''roles '': [''ROLE_ADMIN'']. For SUPER ADMIN,
+      use the id client to define the new user client. you can also define a new super admin with  ''roles '': [''ROLE_SUPER_ADMIN'']",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Users::class, groups={"createUser"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Users")
+     * 
+     */
     #[Route('/api/users/{id}', name: 'app_update_user', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function updateUser(
@@ -145,6 +219,23 @@ class UserController extends AbstractController
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
+    /**
+     * 
+     * Use this method to delete a user.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="If you are not SUPER ADMIN, you can only delete users assigned to the same client as yours",
+     *  
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Users::class, groups={"createUser"}))
+     *     )
+     * )
+    
+     * @OA\Tag(name="Users")
+     * 
+     */
     #[Route('/api/users/{id}', name: 'app_delete_user', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function deleteUser(
