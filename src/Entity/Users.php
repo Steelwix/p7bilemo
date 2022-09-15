@@ -8,6 +8,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
+use Symfony\Component\Validator\Constraints as Assert;
 
 // ...
 
@@ -55,6 +56,7 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, unique: true)]
     #[Groups(["getClientUsers", "getUsers", "createUser"])]
+    #[Assert\NotBlank(message: "Un utilisateur doit avoir un pseudonyme")]
     private ?string $username = null;
 
     #[ORM\Column]
@@ -66,10 +68,12 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     #[Groups(["createUser"])]
+    #[Assert\NotBlank(message: "Un utilisateur doit avoir un mot de passe")]
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getClientUsers", "getUsers", "createUser"])]
+    #[Assert\NotBlank(message: "Un utilisateur doit avoir une adresse e-mail")]
     private ?string $email = null;
 
     #[ORM\ManyToOne(inversedBy: 'users', cascade: ['persist'])]

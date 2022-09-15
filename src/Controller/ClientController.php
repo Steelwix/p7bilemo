@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Clients;
 use App\Repository\ClientsRepository;
+use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -20,6 +21,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @method ?User getUser()
@@ -97,10 +99,15 @@ class ClientController extends AbstractController
         SerializerInterface $serializer,
         JMSSerializer $jmsserializer,
         EntityManagerInterface $em,
-        TagAwareCacheInterface $cache
+        TagAwareCacheInterface $cache,
+        ValidatorInterface $validator
     ): JsonResponse {
         $cache->invalidateTags(["allClientsCache"]);
         $client = $serializer->deserialize($request->getContent(), Clients::class, 'json');
+        $errors = $validator->validate($client);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
         $em->persist($client);
         $em->flush();
         $context = SerializationContext::create()->setGroups(["getClients"]);
@@ -166,10 +173,15 @@ class ClientController extends AbstractController
         JMSSerializer $jmsserializer,
         Clients $currentClient,
         EntityManagerInterface $em,
-        TagAwareCacheInterface $cache
+        TagAwareCacheInterface $cache,
+        ValidatorInterface $validator
     ) {
         $cache->invalidateTags(["allClientsCache"]);
         $updatedClient = $serializer->deserialize($request->getContent(), Clients::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentClient]);
+        $errors = $validator->validate($updatedClient);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
         $em->persist($updatedClient);
         $em->flush();
 
@@ -220,21 +232,47 @@ class ClientController extends AbstractController
      *
      */
     #[Route('/api/clients/{id}/users', name: 'app_users_from_client', methods: ['GET'])]
-    public function getAllUsersFromClient(Clients $client, JMSSerializer $serializer)
+    public function getAllUsersFromClient(Clients $client, UsersRepository $usersRepository, TagAwareCacheInterface $cachePool, Request $request,  JMSSerializer $serializer)
     {
 
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-        //pagination
-        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
-            $context = SerializationContext::create()->setGroups(["getClientUsers"]);
-            $jsonClientList = $serializer->serialize($userClient, 'json',  $context);
-            return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
-        } else {
-            $context = SerializationContext::create()->setGroups(["getClientUsers"]);
-            $jsonClientList = $serializer->serialize($client, 'json',  $context);
+        if ($userRole !== array("ROLE_SUPER_ADMIN") &&  $userClient !== $client) {
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+        if ($userRole !== array("ROLE_SUPER_ADMIN") &&  $userClient === $client) {
+
+            $page = $request->get('page', 1);
+            $limit = $request->get('limit', 10);
+            $idCache = "clientAllUsers-" . $page . "-" . $limit;
+            $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer) {
+                $item->tag("clientAllUsers");
+                $usersList = $usersRepository->findAllWithPagination($page, $limit);
+                $user = $this->getUser();
+                $userClient = $user->getClient()->getId();
+                foreach ($usersList as $index => $userList) {
+                    $userListClient = $userList->getClient()->getId();
+                    if ($userListClient !== $userClient) {
+                        unset($usersList[$index]);
+                    }
+                }
+                $context = SerializationContext::create()->setGroups(["getClientUsers"]);
+                return $serializer->serialize($usersList, 'json', $context);
+            });
+
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
         }
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 10);
+        $idCache = "clientAllUsers-" . $page . "-" . $limit;
+        $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($usersRepository, $page, $limit, $serializer) {
+            $item->tag("clientAllUsers");
+            $usersList = $usersRepository->findAllWithPagination($page, $limit);
+            $context = SerializationContext::create()->setGroups(["getClientUsers"]);
+            return $serializer->serialize($usersList, 'json', $context);
+        });
+
+        return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
     }
 }

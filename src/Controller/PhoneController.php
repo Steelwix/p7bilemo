@@ -47,7 +47,6 @@ class PhoneController extends AbstractController
         $limit = $request->get('limit', 10);
         $idCache = "allPhonesCache-" . $page . "-" . $limit;
         $jsonPhonesList = $cachePool->get($idCache, function (ItemInterface $item) use ($phonesRepository, $page, $limit, $serializer) {
-            echo ("CACHE");
             $item->tag("allPhonesCache");
             $phonesList = $phonesRepository->findAllWithPagination($page, $limit);
             $context = SerializationContext::create()->setGroups(["getPhones"]);
@@ -140,10 +139,16 @@ class PhoneController extends AbstractController
         SerializerInterface $serializer,
         Phones $currentPhone,
         EntityManagerInterface $em,
-        TagAwareCacheInterface $cache
+        TagAwareCacheInterface $cache,
+        ValidatorInterface $validator
     ) {
         $cache->invalidateTags(["allPhonesCache"]);
         $updatedPhone = $serializer->deserialize($request->getContent(), Phones::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentPhone]);
+        $errors = $validator->validate($updatedPhone);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
         $em->persist($updatedPhone);
         $em->flush();
 

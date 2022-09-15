@@ -60,6 +60,7 @@ class Phones
 
     #[ORM\Column(length: 255)]
     #[Groups(["getPhones"])]
+    #[Assert\NotBlank(message: "Le téléphone doit avoir un prix")]
     private ?string $price = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

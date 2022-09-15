@@ -23,8 +23,7 @@ use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Security;
 use OpenApi\Annotations as OA;
-
-
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /** @method ?Users getUser() */
 class UserController extends AbstractController
@@ -48,9 +47,15 @@ class UserController extends AbstractController
      * 
      */
     #[Route('/api/users', name: 'app_users', methods: ['GET'])]
-    #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
     public function getAllUsers(UsersRepository $usersRepository, JMSSerializer $serializer, Request $request, TagAwareCacheInterface $cachePool): JsonResponse
     {
+        $user = $this->getUser();
+        $userRole = $user->getRoles();
+        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
+            $context = SerializationContext::create()->setGroups(["getUsers"]);
+            $jsonUser = $serializer->serialize($user, 'json', $context);
+            return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
+        }
         $page = $request->get('page', 1);
         $limit = $request->get('limit', 10);
         $idCache = "allUsersCache-" . $page . "-" . $limit;
@@ -184,7 +189,8 @@ class UserController extends AbstractController
         TagAwareCacheInterface $cache,
         EntityManagerInterface $em,
         ClientsRepository $clientsRepository,
-        Request $request
+        Request $request,
+        ValidatorInterface $validator
     ) {
         $cache->invalidateTags(["allUsersCache"]);
         $currentUserRole = $currentUser->getRoles();
@@ -211,6 +217,10 @@ class UserController extends AbstractController
             } else {
                 $client = $user->getClient();
                 $updatedUser->setClient($client);
+            }
+            $errors = $validator->validate($updatedUser);
+            if ($errors->count() > 0) {
+                return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
             }
             $em->persist($updatedUser);
             $em->flush();
