@@ -82,7 +82,30 @@ class UserController extends AbstractController
      *        @OA\Items(ref=@Model(type=Users::class, groups={"createUser"}))
      *     )
      * )
-    
+     * @OA\Parameter(
+     *     name="username",
+     *     in="query",
+     *     description="username for your user",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="password",
+     *     in="query",
+     *     description="user password",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="email",
+     *     in="query",
+     *     description="user's email",
+     *     @OA\Schema(type="string")
+     * )
+     *      @OA\Parameter(
+     *     name="client",
+     *     in="query",
+     *     description="client id assigned to the user",
+     *     @OA\Schema(type="int")
+     * )
      * @OA\Tag(name="Users")
      *
      */
@@ -176,7 +199,30 @@ class UserController extends AbstractController
      *        @OA\Items(ref=@Model(type=Users::class, groups={"createUser"}))
      *     )
      * )
-    
+     * @OA\Parameter(
+     *     name="username",
+     *     in="query",
+     *     description="username for your user",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="password",
+     *     in="query",
+     *     description="user password",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="email",
+     *     in="query",
+     *     description="user's email",
+     *     @OA\Schema(type="string")
+     * )
+     *      @OA\Parameter(
+     *     name="client",
+     *     in="query",
+     *     description="client id assigned to the user",
+     *     @OA\Schema(type="int")
+     * )
      * @OA\Tag(name="Users")
      * 
      */
