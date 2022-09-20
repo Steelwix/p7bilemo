@@ -1,10 +1,10 @@
 How to install Bilemo :
 
-1. clone the project on the folder you want the project to be with the command "git clone https://github.com/Steelwix/p7bilemo"
+1. Clone the project on the folder you want the project to be with the command "git clone https://github.com/Steelwix/p7bilemo"
 
-2. the "latest.tar" is the database for Docker. Install docker.
+2. Download the file named "latest.tar" and place it anywhere you can find it. It is the database for Docker. Install docker.
 
-3. In the terminal, use the command "docker import /path/to/latest.tar" (If you are already in the folder, the command should be "docker import latest.tar")
+3. In the terminal, use the command "docker import /path/to/latest.tar"
 
 4. Back to Docker, run the p7bilemo container. You can edit settings in docker-compose files to fit your settings.
 

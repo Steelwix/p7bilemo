@@ -88,7 +88,12 @@ class ClientController extends AbstractController
      *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
      *     )
      * )
-    
+                @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="client's name",
+     *     @OA\Schema(type="string")
+     * )
      * @OA\Tag(name="Clients")
      *
      */
@@ -161,7 +166,12 @@ class ClientController extends AbstractController
      *        @OA\Items(ref=@Model(type=Clients::class, groups={"getClients"}))
      *     )
      * )
-    
+            @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="client's name",
+     *     @OA\Schema(type="string")
+     * )
      * @OA\Tag(name="Clients")
      *
      */

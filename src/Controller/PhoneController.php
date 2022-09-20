@@ -67,7 +67,24 @@ class PhoneController extends AbstractController
      *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
      *     )
      * )
-    
+     * @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="Phone's name",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="price",
+     *     in="query",
+     *     description="Phone's price",
+     *     @OA\Schema(type="string")
+     * )
+     *     * @OA\Parameter(
+     *     name="description",
+     *     in="query",
+     *     description="Phone's description",
+     *     @OA\Schema(type="string")
+     * )
      * @OA\Tag(name="Phones")
      *
      */
@@ -117,20 +134,36 @@ class PhoneController extends AbstractController
         $jsonPhone = $serializer->serialize($phone, 'json');
         return new JsonResponse($jsonPhone, Response::HTTP_OK, [], true);
     }
-    /**
-     * Use this method to modify the infos about one phone.
-     *
+    /** 
+     *  Use this method to modify datas about a phone
+     * 
      * @OA\Response(
      *     response=200,
-     *     description=" You must be SUPER ADMIN to use this method.",
+     *     description=" You must be SUPER_ADMIN to use this method.",
      *     @OA\JsonContent(
      *        type="array",
      *        @OA\Items(ref=@Model(type=Phones::class, groups={"getPhones"}))
      *     )
      * )
-    
+     * @OA\Parameter(
+     *     name="name",
+     *     in="query",
+     *     description="Phone's name",
+     *     @OA\Schema(type="string")
+     * )
+     *     @OA\Parameter(
+     *     name="price",
+     *     in="query",
+     *     description="Phone's price",
+     *     @OA\Schema(type="string")
+     * )
+     *     * @OA\Parameter(
+     *     name="description",
+     *     in="query",
+     *     description="Phone's description",
+     *     @OA\Schema(type="string")
+     * )
      * @OA\Tag(name="Phones")
-     *
      */
     #[Route('/api/phones/{id}', name: 'app_update_phone', methods: ['PUT'])]
     #[IsGranted('ROLE_SUPER_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour intéragir avec cette route')]
