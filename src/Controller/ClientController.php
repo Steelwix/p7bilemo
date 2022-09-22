@@ -180,7 +180,6 @@ class ClientController extends AbstractController
     public function UpdatePhone(
         Request $request,
         SerializerInterface $serializer,
-        JMSSerializer $jmsserializer,
         Clients $currentClient,
         EntityManagerInterface $em,
         TagAwareCacheInterface $cache,
