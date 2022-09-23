@@ -103,7 +103,7 @@ class UserController extends AbstractController
      *      @OA\Parameter(
      *     name="client",
      *     in="query",
-     *     description="client id assigned to the user",
+     *     description="client id assigned to the user, if null",
      *     @OA\Schema(type="int")
      * )
      * @OA\Tag(name="Users")

@@ -20,7 +20,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *          "app_one_user",
  *          parameters = { "id" = "expr(object.getId())" }
  *      ),
- *      exclusion = @Hateoas\Exclusion(groups="getUsers")
+ *      exclusion = @Hateoas\Exclusion(groups={"getUsers", "getClientUsers"})
  * )
  *
  *
@@ -30,7 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *          "app_delete_user",
  *          parameters = { "id" = "expr(object.getId())" },
  *      ),
- *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      exclusion = @Hateoas\Exclusion(groups={"getUsers", "getClientUsers"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
  * )
  *
  * @Hateoas\Relation(
@@ -39,7 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *          "app_update_user",
  *          parameters = { "id" = "expr(object.getId())" },
  *      ),
- *      exclusion = @Hateoas\Exclusion(groups="getUsers", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      exclusion = @Hateoas\Exclusion(groups={"getUsers", "getClientUsers"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
  * )
  *
  */
