@@ -49,7 +49,7 @@ class ClientController extends AbstractController
     {
         $user = $this->getUser();
         $userRole = $user->getRoles();
-        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
+        if ($userRole != array("ROLE_SUPER_ADMIN")) {
 
             $idCache = "allClientsCache-";
             $jsonClientList = $cachePool->get($idCache, function (ItemInterface $item) use ($clientsRepository, $serializer) {
@@ -144,7 +144,7 @@ class ClientController extends AbstractController
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
 
-        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
+        if ($userRole != array("ROLE_SUPER_ADMIN")) {
             $context = SerializationContext::create()->setGroups(["getClients"]);
             $jsonClientList = $serializer->serialize($userClient, 'json',  $context);
             return new JsonResponse($jsonClientList, Response::HTTP_OK, [], true);
@@ -247,10 +247,10 @@ class ClientController extends AbstractController
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-        if ($userRole !== array("ROLE_SUPER_ADMIN") &&  $userClient !== $client) {
+        if ($userRole != array("ROLE_SUPER_ADMIN") &&  $userClient !== $client) {
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
-        if ($userRole !== array("ROLE_SUPER_ADMIN") &&  $userClient === $client) {
+        if ($userRole != array("ROLE_SUPER_ADMIN") &&  $userClient === $client) {
 
             $page = $request->get('page', 1);
             $limit = $request->get('limit', 10);

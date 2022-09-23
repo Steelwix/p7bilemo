@@ -51,7 +51,7 @@ class UserController extends AbstractController
     {
         $user = $this->getUser();
         $userRole = $user->getRoles();
-        if ($userRole !== array("ROLE_SUPER_ADMIN")) {
+        if ($userRole != array("ROLE_SUPER_ADMIN")) {
             $context = SerializationContext::create()->setGroups(["getUsers"]);
             $jsonUser = $serializer->serialize($user, 'json', $context);
             return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
@@ -127,7 +127,7 @@ class UserController extends AbstractController
         $newUser = $serializerInterface->deserialize($request->getContent(), Users::class, 'json');
 
 
-        if ($userRole === array("ROLE_SUPER_ADMIN")) {
+        if ($userRole == array("ROLE_SUPER_ADMIN")) {
             // Récupération de l'idCLient. S'il n'est pas défini, alors on met -1 par défaut.
             $idClient = $content['Client'] ?? -1;
             // On cherche le client qui correspond et on l'assigne au user.
@@ -137,7 +137,7 @@ class UserController extends AbstractController
         } else {
             $client = $user->getClient();
             $newUser->setClient($client);
-            if ($content['roles'] === array("ROLE_SUPER_ADMIN")) {
+            if ($content['roles'] == array("ROLE_SUPER_ADMIN")) {
                 $content['roles'] = null;
             }
         }
@@ -176,7 +176,7 @@ class UserController extends AbstractController
         $userClient = $user->getClient();
         $checkingUserClient = $checkingUser->getClient();
 
-        if ($userRole === array("ROLE_SUPER_ADMIN") || $checkingUserClient === $userClient) {
+        if ($userRole == array("ROLE_SUPER_ADMIN") || $checkingUserClient === $userClient) {
             $context = SerializationContext::create()->setGroups(["getUsers"]);
             $jsonUser = $serializer->serialize($checkingUser, 'json', $context);
             return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
@@ -244,10 +244,10 @@ class UserController extends AbstractController
         $user = $this->getUser();
         $userRole = $user->getRoles();
         $userClient = $user->getClient();
-        if ($currentUserRole === array("ROLE_SUPER_ADMIN") && $userRole !== array("ROLE_SUPER_ADMIN")) {
+        if ($currentUserRole == array("ROLE_SUPER_ADMIN") && $userRole != array("ROLE_SUPER_ADMIN")) {
             return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
         }
-        if ($userRole === array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
+        if ($userRole == array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
 
             $updatedUser = $serializer->deserialize($request->getContent(), Users::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentUser]);
 
@@ -256,7 +256,7 @@ class UserController extends AbstractController
                 $unhashedPassword = $content['password'];
                 $updatedUser->setPassword($userPasswordHasher->hashPassword($updatedUser, $unhashedPassword));
             }
-            if ($userRole === array("ROLE_SUPER_ADMIN")) {
+            if ($userRole == array("ROLE_SUPER_ADMIN")) {
                 $idClient = $content['Client'] ?? -1;
 
                 $updatedUser->setClient($clientsRepository->find($idClient));
@@ -305,10 +305,10 @@ class UserController extends AbstractController
         $userClient = $user->getClient();
         $currentUserRole = $currentUser->getRoles();
         $currentUserClient = $currentUser->getClient();
-        if ($currentUserRole === array("ROLE_SUPER_ADMIN") && $userRole !== array("ROLE_SUPER_ADMIN")) {
+        if ($currentUserRole == array("ROLE_SUPER_ADMIN") && $userRole != array("ROLE_SUPER_ADMIN")) {
             return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
         }
-        if ($userRole === array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
+        if ($userRole == array("ROLE_SUPER_ADMIN") || $currentUserClient === $userClient) {
             $em->remove($currentUser);
             $em->flush();
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
