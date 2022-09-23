@@ -103,7 +103,7 @@ class UserController extends AbstractController
      *      @OA\Parameter(
      *     name="client",
      *     in="query",
-     *     description="client id assigned to the user, if null",
+     *     description="client id assigned to the user, the new user is assigned to your client if null, so if you are not super_admin, you can just let it null",
      *     @OA\Schema(type="int")
      * )
      * @OA\Tag(name="Users")
